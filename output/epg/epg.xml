@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<tv date="20250621074914 +0800">
+<tv date="20250621103334 +0800">
 	<channel id="CCTV-1">
 		<display-name lang="zh">CCTV-1</display-name>
 	</channel>
@@ -24471,6 +24471,12 @@
 	<programme channel="黑莓动画" start="20250621123000 +0800" stop="20250621140800 +0800">
 		<title lang="zh">01_假面骑士令和第一世代（日语版）</title>
 	</programme>
+	<programme channel="黑莓动画" start="20250621140800 +0800" stop="20250621153700 +0800">
+		<title lang="zh">摩登森林之美食总动员</title>
+	</programme>
+	<programme channel="黑莓动画" start="20250621153700 +0800" stop="20250621170500 +0800">
+		<title lang="zh">棉球方块历险记</title>
+	</programme>
 	<channel id="黑莓电影">
 		<display-name lang="zh">黑莓电影</display-name>
 	</channel>
@@ -24500,6 +24506,9 @@
 	</programme>
 	<programme channel="黑莓电影" start="20250621133900 +0800" stop="20250621151600 +0800">
 		<title lang="zh">弓马啸西风</title>
+	</programme>
+	<programme channel="黑莓电影" start="20250621151600 +0800" stop="20250621163800 +0800">
+		<title lang="zh">大话西游：至尊宝</title>
 	</programme>
 	<channel id="黑龙江卫视">
 		<display-name lang="zh">黑龙江卫视</display-name>
