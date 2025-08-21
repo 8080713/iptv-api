@@ -37,3 +37,5 @@ https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u
 https://raw.githubusercontent.com/suxuang/myIPTV/main/ipv6.m3u
 
 https://tv.iill.top/m3u/Gather
+
+http://mp9f95qlr5w6g9:y1elpx1zic9qvx@p.proxik.cloud:8080
