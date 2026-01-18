@@ -2,7 +2,7 @@ name: 'Cleanup old files'
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 每天午夜运行
+    - cron: '0 3 * * *'  # 每天早上3点运行
   workflow_dispatch:
     inputs:
       days:
