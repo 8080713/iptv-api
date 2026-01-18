@@ -1,0 +1,148 @@
+name: 'Cleanup old files'
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天午夜运行
+  workflow_dispatch:
+    inputs:
+      days:
+        description: '删除多少天前的文件'
+        required: false
+        default: '3'
+        type: choice
+        options:
+          - '1'
+          - '3'
+          - '7'
+          - '30'
+      file_types:
+        description: '要清理的文件类型'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'logs'
+          - 'cache'
+          - 'hls'
+          - 'result'
+          - 'epg'
+      dry_run:
+        description: '仅显示将要删除的文件，不实际删除'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set branch name
+        id: vars
+        run: echo "BRANCH_NAME=${{ github.repository_owner == 'Guovin' && 'gd' || 'master' }}" >> $GITHUB_ENV
+      
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+      
+      - name: Set cleanup parameters
+        id: params
+        run: |
+          DAYS="${{ github.event.inputs.days || '3' }}"
+          FILE_TYPES="${{ github.event.inputs.file_types || 'all' }}"
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+          
+          echo "days=$DAYS" >> $GITHUB_OUTPUT
+          echo "file_types=$FILE_TYPES" >> $GITHUB_OUTPUT
+          echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
+          
+          echo "Cleanup Parameters:"
+          echo "  Days: $DAYS"
+          echo "  File Types: $FILE_TYPES"
+          echo "  Dry Run: $DRY_RUN"
+      
+      - name: Find and delete old log files
+        if: ${{ steps.params.outputs.file_types == 'all' || steps.params.outputs.file_types == 'logs' }}
+        run: |
+          DAYS=${{ steps.params.outputs.days }}
+          DRY_RUN=${{ steps.params.outputs.dry_run }}
+          echo "Cleaning up log files older than $DAYS days..."
+          if [ "$DRY_RUN" = "true" ]; then
+            find output/log -type f -name "*.log" -mtime +$DAYS -exec ls -lh {} \; || true
+            echo "DRY RUN: No files were deleted"
+          else
+            find output/log -type f -name "*.log" -mtime +$DAYS -exec rm -v {} \; || true
+          fi
+      
+      - name: Find and delete old cache files
+        if: ${{ steps.params.outputs.file_types == 'all' || steps.params.outputs.file_types == 'cache' }}
+        run: |
+          DAYS=${{ steps.params.outputs.days }}
+          DRY_RUN=${{ steps.params.outputs.dry_run }}
+          echo "Cleaning up cache files older than $DAYS days..."
+          if [ "$DRY_RUN" = "true" ]; then
+            find output/data -type f \( -name "*.gz" -o -name "*.db" \) -mtime +$DAYS -exec ls -lh {} \; || true
+            echo "DRY RUN: No files were deleted"
+          else
+            find output/data -type f \( -name "*.gz" -o -name "*.db" \) -mtime +$DAYS -exec rm -v {} \; || true
+          fi
+      
+      - name: Find and delete old HLS files
+        if: ${{ steps.params.outputs.file_types == 'all' || steps.params.outputs.file_types == 'hls' }}
+        run: |
+          DAYS=${{ steps.params.outputs.days }}
+          DRY_RUN=${{ steps.params.outputs.dry_run }}
+          echo "Cleaning up HLS files older than $DAYS days..."
+          if [ "$DRY_RUN" = "true" ]; then
+            find output -type f -name "hls*.txt" -mtime +$DAYS -exec ls -lh {} \; || true
+            echo "DRY RUN: No files were deleted"
+          else
+            find output -type f -name "hls*.txt" -mtime +$DAYS -exec rm -v {} \; || true
+          fi
+      
+      - name: Find and delete old result files
+        if: ${{ steps.params.outputs.file_types == 'all' || steps.params.outputs.file_types == 'result' }}
+        run: |
+          DAYS=${{ steps.params.outputs.days }}
+          DRY_RUN=${{ steps.params.outputs.dry_run }}
+          echo "Cleaning up old result files older than $DAYS days..."
+          if [ "$DRY_RUN" = "true" ]; then
+            find output -type f -name "result.txt" -mtime +$DAYS -exec ls -lh {} \; || true
+            echo "DRY RUN: No files were deleted"
+          else
+            find output -type f -name "result.txt" -mtime +$DAYS -exec rm -v {} \; || true
+          fi
+      
+      - name: Find and delete old EPG files
+        if: ${{ steps.params.outputs.file_types == 'all' || steps.params.outputs.file_types == 'epg' }}
+        run: |
+          DAYS=${{ steps.params.outputs.days }}
+          DRY_RUN=${{ steps.params.outputs.dry_run }}
+          echo "Cleaning up old EPG files older than $DAYS days..."
+          if [ "$DRY_RUN" = "true" ]; then
+            find output/epg -type f \( -name "*.xml" -o -name "*.gz" \) -mtime +$DAYS -exec ls -lh {} \; || true
+            echo "DRY RUN: No files were deleted"
+          else
+            find output/epg -type f \( -name "*.xml" -o -name "*.gz" \) -mtime +$DAYS -exec rm -v {} \; || true
+          fi
+      
+      - name: Remove empty directories
+        if: ${{ steps.params.outputs.dry_run == 'false' }}
+        run: |
+          echo "Removing empty directories..."
+          find output -type d -empty -delete || true
+      
+      - name: Commit and push changes
+        if: ${{ steps.params.outputs.dry_run == 'false' }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          if ! git diff --staged --quiet; then
+            DAYS=${{ steps.params.outputs.days }}
+            FILE_TYPES=${{ steps.params.outputs.file_types }}
+            git commit -m "Github Action Auto Cleanup: Removed files older than $DAYS days (types: $FILE_TYPES)"
+            git push
+          else
+            echo "No files to clean up"
+          fi
